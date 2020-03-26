@@ -85,16 +85,16 @@ def main():
         stop_words_caps[i] = string.capwords(stop_words[i])
     stop_words_all = stop_words + stop_words_caps
 
-    # Iterate over stop_words_all and find any matches in the frequency table, if a match is found, replace that
-    # word with a nan value (to be deleted later).
-    for word in stop_words_all:
-        for i in range(0, len(freq_df)):
-            if word == freq_df['word'][i]:
-                freq_df['word'][i] = np.nan
-
-    # Drop rows containing nan from the freq_df dataframe, reset the index.
-    freq_df = freq_df.dropna()
-    freq_df = freq_df.reset_index(drop=True)
+    # # Iterate over stop_words_all and find any matches in the frequency table, if a match is found, replace that
+    # # word with a nan value (to be deleted later).
+    # for word in stop_words_all:
+    #     for i in range(0, len(freq_df)):
+    #         if word == freq_df['word'][i]:
+    #             freq_df['word'][i] = np.nan
+    #
+    # # Drop rows containing nan from the freq_df dataframe, reset the index.
+    # freq_df = freq_df.dropna()
+    # freq_df = freq_df.reset_index(drop=True)
 
     # Convert all_data from a list to a pandas dataframe.
     all_data = pd.DataFrame(all_data, columns=['text'])
@@ -102,6 +102,22 @@ def main():
     # Merge the name_map that holds all of the truncated names of the documents and the strings of the parsed documents
     # in all_data to form a comprehensive all_data pandas dataframe.
     all_data = name_map.join(all_data)
+
+    # create split sentences data structure to hold every document and every sentence the document contains.
+    split_sentences = pd.DataFrame(columns=['document', 'sentence'])
+    # create docDict intermediate python dictionary data structure to hold every document number and a list of
+    # sentences from that document.
+    docDict = {}
+    for i in range(0, len(all_data)):
+        docDict["{0}".format(i)] = all_data['text'][i].split('.')
+
+    # Create pandas dataframe from the docDict dictionary to hold the document number and every sentence.
+    k = 0
+    for i in range(0, len(docDict)):
+        for j in range(0, len(docDict[f"{i}"])):
+            split_sentences.loc[k] = i, docDict[f"{i}"][j] + "."
+            k = k+1
+    print(split_sentences.head())
 
 
 if __name__ == "__main__":
