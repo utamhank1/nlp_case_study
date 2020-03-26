@@ -7,6 +7,9 @@ import pandas as pd
 import collections
 from collections import Counter
 import re
+import csv
+import string
+import numpy as np
 
 # Infrastructure to set up command line argument parser.
 parser = argparse.ArgumentParser(description='Enter the directory containing the .txt files you wish to analyze'
@@ -27,14 +30,10 @@ if not os.path.isdir(directory):
     sys.exit()
 
 
-# Helper function utilizing Counter function from collections to output a list of words and their associated counts.
-def word_counter(filename):
-    with open(filename) as file:
-        return Counter(file.read().split())
-
-
 def main():
     print(f"The directory specified is {directory} with an N value of {N}.")
+    # Load English tokenizer, tagger, parser, NER and word vectors
+    # nlp = English()
 
     # Read in multiple files from directory with glob utility.
     file_names = glob.glob(directory + '/*txt')
@@ -62,13 +61,40 @@ def main():
 
     # Convert frequency table to pandas dataframe to enable easier sorting.
     freq_df = pd.DataFrame.from_dict(freq_table, columns=['frequency'], orient='index')
+    # Sort word frequency values by descending order.
+    freq_df = freq_df.sort_values(by='frequency', ascending=False)
     # Add index column.
     freq_df = freq_df.reset_index()
     # Rename old index column to 'word'.
-    freq_df = freq_df.rename(columns={'index':'word'})
-    # Sort word frequency values by descending order.
-    freq_df = freq_df.sort_values(by='frequency', ascending=False)
-    print(freq_df.head(70))
+    freq_df = freq_df.rename(columns={'index': 'word'})
+
+    # Eliminate stop words from frequency table.
+    # Import list of stopwords.
+    with open('stop-word-list.csv', newline='') as csv_file:
+        stop_data = csv.reader(csv_file, delimiter=',')
+        stop_words = list(stop_data)
+    stop_words = stop_words[0]
+
+    # Strip spaces out of stop words list.
+    stop_words = [word.strip(' ') for word in stop_words]
+    # Preallocate list of stop words with first letter capitalized.
+    stop_words_caps = [0] * len(stop_words)
+
+    # Capitalize every first letter in stop words and merge the two lists of stop_words.
+    for i in range(0, len(stop_words)):
+        stop_words_caps[i] = string.capwords(stop_words[i])
+    stop_words_all = stop_words + stop_words_caps
+
+    # Iterate over stop_words_all and find any matches in the frequency table, if a match is found, replace that
+    # word with a nan value (to be deleted later).
+    for word in stop_words_all:
+        for i in range(0, len(freq_df)):
+            if word == freq_df['word'][i]:
+                freq_df['word'][i] = np.nan
+
+    # Drop rows containing nan from the freq_df dataframe, reset the index.
+    freq_df = freq_df.dropna()
+    freq_df = freq_df.reset_index(drop=True)
 
     # Convert all_data from a list to a pandas dataframe.
     all_data = pd.DataFrame(all_data, columns=['text'])
