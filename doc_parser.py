@@ -104,7 +104,7 @@ def main():
     all_data = name_map.join(all_data)
 
     # create split sentences data structure to hold every document and every sentence the document contains.
-    split_sentences = pd.DataFrame(columns=['document', 'sentence'])
+    split_sentences = pd.DataFrame(columns=['document_number', 'sentence'])
     # create docDict intermediate python dictionary data structure to hold every document number and a list of
     # sentences from that document.
     docDict = {}
@@ -117,7 +117,7 @@ def main():
         for j in range(0, len(docDict[f"{i}"])):
             split_sentences.loc[k] = i, docDict[f"{i}"][j] + "."
             k = k+1
-    print(split_sentences.head())
+    print(split_sentences)
 
 
 if __name__ == "__main__":
