@@ -2,6 +2,8 @@
 import argparse
 import os
 import sys
+import glob
+import pandas as pd
 
 # Infrastructure to set up command line argument parser.
 parser = argparse.ArgumentParser(description='Enter the directory containing the .txt files you wish to analyze'
@@ -24,6 +26,17 @@ if not os.path.isdir(directory):
 
 def main():
     print(f"The directory specified is {directory} with an N value of {N}.")
+
+    # Read in multiple files from directory with glob utility.
+    file_names = glob.glob(directory + '/*txt')
+
+    # Empty list to eventually hold strings of all data parsed from .txt files.
+    all_data = []
+
+    # Open every .txt file and save it as a string in an element of the list called all_data.
+    for name in file_names:
+        with open(name, 'r', encoding='utf8') as file:
+            all_data.append(file.read().replace('\n', ''))
 
 
 if __name__ == "__main__":
