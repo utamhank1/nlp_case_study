@@ -30,6 +30,10 @@ if not os.path.isdir(directory):
     sys.exit()
 
 
+def findWholeWord(w):
+    return re.compile(r'\b({0})\b'.format(w), flags=re.IGNORECASE).search
+
+
 def main():
     print(f"The directory specified is {directory} with an N value of {N}.")
     # Load English tokenizer, tagger, parser, NER and word vectors
@@ -85,17 +89,17 @@ def main():
         stop_words_caps[i] = string.capwords(stop_words[i])
     stop_words_all = stop_words + stop_words_caps
 
-    # # Iterate over stop_words_all and find any matches in the frequency table, if a match is found, replace that
-    # # word with a nan value (to be deleted later).
-    # for word in stop_words_all:
-    #     for i in range(0, len(freq_df)):
-    #         if word == freq_df['word'][i]:
-    #             freq_df['word'][i] = np.nan
-    #
-    # # Drop rows containing nan from the freq_df dataframe, reset the index.
-    # freq_df = freq_df.dropna()
-    # freq_df = freq_df.reset_index(drop=True)
+    # Iterate over stop_words_all and find any matches in the frequency table, if a match is found, replace that
+    # word with a nan value (to be deleted later).
+    for word in stop_words_all:
+        for i in range(0, len(freq_df)):
+            if word == freq_df['word'][i]:
+                freq_df['word'][i] = np.nan
 
+    # Drop rows containing nan from the freq_df dataframe, reset the index.
+    freq_df = freq_df.dropna()
+    freq_df = freq_df.reset_index(drop=True)
+    # print(freq_df)
     # Convert all_data from a list to a pandas dataframe.
     all_data = pd.DataFrame(all_data, columns=['text'])
 
@@ -116,8 +120,33 @@ def main():
     for i in range(0, len(docDict)):
         for j in range(0, len(docDict[f"{i}"])):
             split_sentences.loc[k] = i, docDict[f"{i}"][j] + "."
-            k = k+1
-    print(split_sentences)
+            k = k + 1
+    # print(split_sentences)
+
+    # Output configuration.
+    output = pd.DataFrame(freq_df[['word', 'frequency']][0:N], columns=['word', 'frequency', 'document_names',
+                                                                        'sentences'])
+    for i in range(0, N):
+        sentences = []
+        document_names = []
+        for j in range(0, len(split_sentences)):
+            if freq_df['word'][i].lower() in split_sentences['sentence'][j].lower():
+                # or ' ' + freq_df['word'][i]+'.' in split_sentences['sentence'][j]\
+                # or '.' + freq_df['word'][i]+' ' in split_sentences['sentence'][j]\
+                # or ' ' + freq_df['word'][i]+'?' in split_sentences['sentence'][j]\
+                # or '?' + freq_df['word'][i]+' ' in split_sentences['sentence'][j]\
+                # or ' ' + freq_df['word'][i]+'!' in split_sentences['sentence'][j]\
+                # or '!' + freq_df['word'][i]+' ' in split_sentences['sentence'][j]\
+                # or ' ' + freq_df['word'][i]+',' in split_sentences['sentence'][j]\
+                # or ',' + freq_df['word'][i]+' ' in split_sentences['sentence'][j]\
+                # or ' ' + freq_df['word'][i]+';' in split_sentences['sentence'][j]\
+                # or ';' + freq_df['word'][i]+' ' in split_sentences['sentence'][j]:
+                document_names.append(all_data['file_names'][split_sentences['document_number'][j]])
+                sentences.append(split_sentences['sentence'][j])
+        # print(set(document_names))
+        output['document_names'][i] = list(set(document_names))
+        output['sentences'][i] = list(set(sentences))
+    output.to_csv('output_lower_all.csv')
 
 
 if __name__ == "__main__":
