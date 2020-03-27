@@ -4,7 +4,6 @@ import os
 import sys
 import glob
 import pandas as pd
-import collections
 from collections import Counter
 import re
 import csv
@@ -17,12 +16,18 @@ parser = argparse.ArgumentParser(description='Enter the directory containing the
                                              'DIRECTORY MUST NOT CONTAIN ANY SPACES IN FOLDER NAMES')
 parser.add_argument("-d", "--directory", type=str, help='Path to the directory containing the .txt files'
                                                         'DIRECTORY MUST NOT CONTAIN ANY SPACES IN FOLDER NAMES')
-parser.add_argument("-n", "--number_words", type=int, help='Number of interesting words you would like parsed'
-                                                           'ranked by popularity, must be less than 100)')
+parser.add_argument("-n", "--number_words", type=int, help='Number of interesting words and their associated '
+                                                           'sentences that  you would like parsed '
+                                                           'must be less than 100)')
 
 args = parser.parse_args()
 directory = args.directory
 N = args.number_words
+
+# Input validation for N
+if N > 100:
+    print('Please enter a number of words that is less than 100')
+    sys.exit()
 
 # Input validation for directory.
 if not os.path.isdir(directory):
@@ -30,14 +35,14 @@ if not os.path.isdir(directory):
     sys.exit()
 
 
+# Helper function to match word occurrences in a string.
 def findWholeWord(w):
     return re.compile(r'\b({0})\b'.format(w), flags=re.IGNORECASE).search
 
 
 def main():
     print(f"The directory specified is {directory} with an N value of {N}.")
-    # Load English tokenizer, tagger, parser, NER and word vectors
-    # nlp = English()
+    print('----------------------------------------------------------------------------------------------------------')
 
     # Read in multiple files from directory with glob utility.
     file_names = glob.glob(directory + '/*txt')
@@ -46,11 +51,9 @@ def main():
     all_data = []
     name_map = pd.DataFrame(file_names, columns=['file_names'])
 
-    # Open every .txt file and save it as a string in an element of the list called all_data.
-    index = 0
-
     # Iterate over every file name and read in the corresponding file. Save it as a string and create a list called
     # all_data that holds the strings from each file.
+    index = 0
     for name in file_names:
         with open(name, 'r', encoding='utf8') as file:
             all_data.append(file.read().replace('\n', ''))
@@ -121,32 +124,31 @@ def main():
         for j in range(0, len(docDict[f"{i}"])):
             split_sentences.loc[k] = i, docDict[f"{i}"][j] + "."
             k = k + 1
-    # print(split_sentences)
 
     # Output configuration.
     output = pd.DataFrame(freq_df[['word', 'frequency']][0:N], columns=['word', 'frequency', 'document_names',
                                                                         'sentences'])
+    # For loop that iterates from 0 to the user specified N value (representing the number of desired interesting words
+    # to scan detect, and parse sentences for and constructs the output data structure by pulling relevant columns and
+    # entries from the freq_df, split_sentences, and all_data data structures.
     for i in range(0, N):
         sentences = []
         document_names = []
         for j in range(0, len(split_sentences)):
-            if freq_df['word'][i].lower() in split_sentences['sentence'][j].lower():
-                # or ' ' + freq_df['word'][i]+'.' in split_sentences['sentence'][j]\
-                # or '.' + freq_df['word'][i]+' ' in split_sentences['sentence'][j]\
-                # or ' ' + freq_df['word'][i]+'?' in split_sentences['sentence'][j]\
-                # or '?' + freq_df['word'][i]+' ' in split_sentences['sentence'][j]\
-                # or ' ' + freq_df['word'][i]+'!' in split_sentences['sentence'][j]\
-                # or '!' + freq_df['word'][i]+' ' in split_sentences['sentence'][j]\
-                # or ' ' + freq_df['word'][i]+',' in split_sentences['sentence'][j]\
-                # or ',' + freq_df['word'][i]+' ' in split_sentences['sentence'][j]\
-                # or ' ' + freq_df['word'][i]+';' in split_sentences['sentence'][j]\
-                # or ';' + freq_df['word'][i]+' ' in split_sentences['sentence'][j]:
+            # Use helper function to look for matches between the words in freq_df and split_sentences.
+            if findWholeWord(freq_df['word'][i].lower())(split_sentences['sentence'][j].lower()) is not None:
+                # If match is found, add that document name and that sentence to the list of document numbers and
+                # sentences for that word.
                 document_names.append(all_data['file_names'][split_sentences['document_number'][j]])
                 sentences.append(split_sentences['sentence'][j])
-        # print(set(document_names))
+
+        # Find all unique entries in the set of all document names containing that word and all unique sentences
+        # containing that word, parse them to a list, and load them into that row of the output data structure.
         output['document_names'][i] = list(set(document_names))
         output['sentences'][i] = list(set(sentences))
-    output.to_csv('output_lower_all.csv')
+
+    # Extract output to .csv file in the specified directory.
+    output.to_csv('output.csv')
 
 
 if __name__ == "__main__":
