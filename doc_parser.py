@@ -1,4 +1,4 @@
-# Import libaries.
+# Import libraries.
 import argparse
 import os
 import sys
@@ -11,7 +11,7 @@ import string
 import numpy as np
 
 ########################################################################################################################
-####################### Infrastructure to set up command line argument parser & Helper functions. ######################
+####################### Infrastructure to set up command line argument parser & helper functions. ######################
 ########################################################################################################################
 parser = argparse.ArgumentParser(description='Enter the directory containing the .txt files you wish to analyze'
                                              'as well as the number of interesting words you would like to observe'
@@ -43,7 +43,7 @@ def findWholeWord(w):
 
 
 def main():
-    print(f"The directory specified is {directory} with an N value of {N}.")
+    print(f"The path to the file directory specified is {directory} with an N value of {N}.")
     print('----------------------------------------------------------------------------------------------------------')
 
     ####################################################################################################################
@@ -74,12 +74,8 @@ def main():
 
     # Convert frequency table to pandas dataframe to enable easier sorting.
     freq_df = pd.DataFrame.from_dict(freq_table, columns=['frequency'], orient='index')
-    # Sort word frequency values by descending order.
-    freq_df = freq_df.sort_values(by='frequency', ascending=False)
-    # Add index column.
-    freq_df = freq_df.reset_index()
-    # Rename old index column to 'word'.
-    freq_df = freq_df.rename(columns={'index': 'word'})
+    # Sort word frequency values by descending order, add index column, rename index column to 'word'.
+    freq_df = freq_df.sort_values(by='frequency', ascending=False).reset_index().rename(columns={'index': 'word'})
 
     ####################################################################################################################
     ################################## Eliminate stop words from frequency table.#######################################
@@ -108,8 +104,7 @@ def main():
                 freq_df['word'][i] = np.nan
 
     # Drop rows containing nan from the freq_df dataframe, reset the index.
-    freq_df = freq_df.dropna()
-    freq_df = freq_df.reset_index(drop=True)
+    freq_df = freq_df.dropna().reset_index(drop=True)
     # Convert all_data from a list to a pandas dataframe.
     all_data = pd.DataFrame(all_data, columns=['text'])
 
