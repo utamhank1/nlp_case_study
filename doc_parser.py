@@ -1,4 +1,4 @@
-# Import libaries.
+# Import libraries.
 import argparse
 import os
 import sys
@@ -10,7 +10,9 @@ import csv
 import string
 import numpy as np
 
-# Infrastructure to set up command line argument parser.
+########################################################################################################################
+####################### Infrastructure to set up command line argument parser & helper functions. ######################
+########################################################################################################################
 parser = argparse.ArgumentParser(description='Enter the directory containing the .txt files you wish to analyze'
                                              'as well as the number of interesting words you would like to observe'
                                              'DIRECTORY MUST NOT CONTAIN ANY SPACES IN FOLDER NAMES')
@@ -26,12 +28,12 @@ N = args.number_words
 
 # Input validation for N
 if N > 100:
-    print('Please enter a number of words that is less than 100')
+    print('Please enter a number of words that is less than 100.')
     sys.exit()
 
 # Input validation for directory.
 if not os.path.isdir(directory):
-    print('The path specified does not exist')
+    print('The path specified does not exist.')
     sys.exit()
 
 
@@ -41,10 +43,12 @@ def findWholeWord(w):
 
 
 def main():
-    print(f"The directory specified is {directory} with an N value of {N}.")
+    print(f"The path to the file directory specified is {directory} with an N value of {N}.")
     print('----------------------------------------------------------------------------------------------------------')
 
-    # Read in multiple files from directory with glob utility.
+    ####################################################################################################################
+    ########################## Read in multiple files from directory with glob utility.#################################
+    ####################################################################################################################
     file_names = glob.glob(directory + '/*txt')
 
     # Empty list to eventually hold strings of all data parsed from .txt files.
@@ -63,19 +67,19 @@ def main():
             name_map['file_names'][index] = name_split[-1]
             index = index + 1
 
-    # Create frequency table as a python dict to analyze all_data and determine the frequency of every word.
+    ####################################################################################################################
+    ####### Create frequency table as a python dict to analyze all_data and determine the frequency of every word.######
+    ####################################################################################################################
     freq_table = Counter(re.sub(r'[1234567890,.;@#?!&$\-"]+\ *', ' ', ' '.join(all_data)).split())
 
     # Convert frequency table to pandas dataframe to enable easier sorting.
     freq_df = pd.DataFrame.from_dict(freq_table, columns=['frequency'], orient='index')
-    # Sort word frequency values by descending order.
-    freq_df = freq_df.sort_values(by='frequency', ascending=False)
-    # Add index column.
-    freq_df = freq_df.reset_index()
-    # Rename old index column to 'word'.
-    freq_df = freq_df.rename(columns={'index': 'word'})
+    # Sort word frequency values by descending order, add index column, rename index column to 'word'.
+    freq_df = freq_df.sort_values(by='frequency', ascending=False).reset_index().rename(columns={'index': 'word'})
 
-    # Eliminate stop words from frequency table.
+    ####################################################################################################################
+    ################################## Eliminate stop words from frequency table.#######################################
+    ####################################################################################################################
     # Import list of stopwords.
     with open('stop-word-list.csv', newline='') as csv_file:
         stop_data = csv.reader(csv_file, delimiter=',')
@@ -100,9 +104,7 @@ def main():
                 freq_df['word'][i] = np.nan
 
     # Drop rows containing nan from the freq_df dataframe, reset the index.
-    freq_df = freq_df.dropna()
-    freq_df = freq_df.reset_index(drop=True)
-    # print(freq_df)
+    freq_df = freq_df.dropna().reset_index(drop=True)
     # Convert all_data from a list to a pandas dataframe.
     all_data = pd.DataFrame(all_data, columns=['text'])
 
@@ -110,7 +112,9 @@ def main():
     # in all_data to form a comprehensive all_data pandas dataframe.
     all_data = name_map.join(all_data)
 
-    # create split sentences data structure to hold every document and every sentence the document contains.
+    ####################################################################################################################
+    ##### Create split_sentences data structure to hold every document and every sentence the document contains.########
+    ####################################################################################################################
     split_sentences = pd.DataFrame(columns=['document_number', 'sentence'])
     # create docDict intermediate python dictionary data structure to hold every document number and a list of
     # sentences from that document.
@@ -125,7 +129,9 @@ def main():
             split_sentences.loc[k] = i, docDict[f"{i}"][j] + "."
             k = k + 1
 
-    # Output configuration.
+    ####################################################################################################################
+    ############################################ Output configuration. #################################################
+    ####################################################################################################################
     output = pd.DataFrame(freq_df[['word', 'frequency']][0:N], columns=['word', 'frequency', 'document_names',
                                                                         'sentences'])
     # For loop that iterates from 0 to the user specified N value (representing the number of desired interesting words
