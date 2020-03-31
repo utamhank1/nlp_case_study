@@ -120,13 +120,13 @@ def main():
     # sentences from that document.
     docDict = {}
     for i in range(0, len(all_data)):
-        docDict["{0}".format(i)] = all_data['text'][i].split('.')
+        docDict["{0}".format(i)] = re.split('(?<=[\.\?\!])\s*', all_data['text'][i])
 
     # Create pandas dataframe from the docDict dictionary to hold the document number and every sentence.
     k = 0
     for i in range(0, len(docDict)):
         for j in range(0, len(docDict[f"{i}"])):
-            split_sentences.loc[k] = i, docDict[f"{i}"][j] + "."
+            split_sentences.loc[k] = i, docDict[f"{i}"][j]
             k = k + 1
 
     ####################################################################################################################
